@@ -2,6 +2,4 @@
 int main ()
 {
     printf("islaaam");
-    
-
-   }
+    return 0;
