@@ -8,6 +8,12 @@
 
 void inputMessage(struct Message m[]);
 void displayMessage(struct Message m); 
+int isUppercase(char c);
+int isLowercase(char c);
+int isAlphabetic(char c);
+void toUppercase(struct Message *m);
+void toLowercase(struct Message *m); 
+
 
 
 #endif
