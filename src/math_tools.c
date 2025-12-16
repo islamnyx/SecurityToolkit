@@ -42,3 +42,44 @@ int gcd(int a, int b)
     }
     return a;
 }
+int factorial(int n)
+{
+    int fact , i;
+    printf("enter your number to compute factorial:");
+    scanf("%d" , &n);
+    fact=n;
+    for(i=n-1 ; i>=1 ; i--)
+    {
+        fact=fact*i;
+    }
+    return fact;
+
+}
+int sumDigits(int n)
+{
+    int sum , digit; 
+    printf("enter your number:");
+    scanf("%d" , &n);
+    sum=0;
+    while(n>0)
+    {
+        digit=n%10;
+        sum=sum+digit;
+        n=n/10;
+    }
+    return sum;
+}
+int reverseNumber(int n)
+{
+    int digit , sum;
+    printf("enter your number to reverse it:");
+    scanf("%d" , &n);
+    sum=0;
+    while(n>0)
+    {
+        digit=n%10;
+        sum=sum*10+digit;
+        n=n/10;
+    }
+    return sum;
+}
