@@ -1,23 +1,37 @@
 #include <stdio.h>
-int reverseNumber(int n)
+#include <math.h>
+int isArmstrong(int n)
 {
-    int digit , sum;
-    printf("enter your number to reverse it:");
+    int save,numdigits,sum,arms,digit;
+    printf("enter ur number to check if its armstrong number:");
     scanf("%d" , &n);
-    sum=0;
-    while(n>0)
+    if(n<0)
+    n=-n;
+    save=n;
+    numdigits=0;
+    while(save>0)
     {
-        digit=n%10;
-        sum=sum*10+digit;
-        n=n/10;
+        save=save/10;
+        numdigits++;    
     }
-    return sum;
-
-
-
+    save=n;
+    sum=0;
+    while(save>0)
+    {
+        digit=save%10;
+        sum=sum+pow(digit , numdigits);
+        save=save/10;
+    }
+    if(sum==n)
+    arms=1;
+    else 
+    arms=0;
+    if(n==0)
+    arms=0;
+    return arms;
 }
 int main()
 {
     int n;
-    printf("%d" ,reverseNumber(n) );
+    printf("%d" ,isArmstrong(n) );
 }
