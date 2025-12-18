@@ -7,19 +7,19 @@
       int length;
 };
 
-void inputMessage(struct Message m[]){
+void inputMessage(struct Message *m){
 
     printf("Enter your Message :");
-    fgets(m[0].text, 200, stdin);
-    m[0].text[strcspn(m[0].text, "\n")] = "\0";
-    m[0].length = strlen(m[0].text);	
+    fgets(m->text, 200, stdin);
+    m->text[strcspn(m->text, "\n")] = '\0';
+    m->length = strlen(m->text);  
    
 }
 
-void displayMessage(struct Message m){
+void displayMessage(struct Message *m){
      
-  printf("Message : %s\n", m.text);
-  printf("Length : %d\n", m.length);
+  printf("Message : %s\n", m->text);
+  printf("Length : %d\n", m->length);
 
 }
 
@@ -60,13 +60,80 @@ void toLowercase(struct Message *m){
 }
 
 void reverseMessage(struct Message *m){
-
-
-
+   int i,j;
+   char temp;
+   i = 0;
+   j = m->length -1 ;
+  while( i < j ){
+     temp = m->text[i];
+      m->text[i] = m->text[j];
+        m->text[j] = temp;
+        i++;
+        j--;
+  }
 
 }
+
+
  void removeSpaces(struct Message *m){
 
 
 
  }
+
+
+
+  void encryptCeaser(struct Message *m, int key) {
+    int i;
+    key = key % 26;
+
+    for (i = 0; m->text[i] != '\0'; i++) {
+        if (m->text[i] >= 'A' && m->text[i] <= 'Z') {
+              m->text[i] = (m->text[i] - 'A' + key) % 26 + 'A';
+        }
+        else if (m->text[i] >= 'a' && m->text[i] <= 'z') {
+             m->text[i] = (m->text[i] - 'a' + key) % 26 + 'a';
+        }
+    }
+    //(c - base + key) % 26 + base
+
+}
+
+
+  void decryptCeaser(struct Message *m , int key){
+     int i;
+     key = key % 26;
+
+    for (i = 0; m->text[i] != '\0'; i++) {
+        if (m->text[i] >= 'A' && m->text[i] <= 'Z') {
+               m->text[i] = (m->text[i] - 'A' - key +  26 ) % 26 + 'A';
+        }
+        else if (m->text[i] >= 'a' && m->text[i] <= 'z') {
+              m->text[i] = (m->text[i] - 'a' - key + 26) % 26 + 'a';
+        }
+        
+    }
+    //(c - base - key + 26) % 26 + base
+
+
+  }
+
+
+  void encryptXOR(struct Message *m , char key[]){
+      int i;
+      int keyLength = strlen(key);
+    for(i = 0 ; i < m->length ; i++){
+      m->text[i] = m->text[i] ^ key[i % keyLength];
+    }
+
+  }
+
+
+  void decryptXOR(struct Message *m , char key[]){
+      int i;
+     int keyLength = strlen(key);
+    for(i = 0 ; i < m->length ; i++){
+      m->text[i] = m->text[i] ^ key[i % keyLength]; //cuz the key here is periodic 
+    }
+
+  }
