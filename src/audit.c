@@ -146,3 +146,5 @@ printf("the Generated Password is : %s", pass);
 
 
   }
+
+void 
