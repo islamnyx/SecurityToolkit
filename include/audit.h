@@ -5,14 +5,9 @@
 #include <string.h>
 #include <ctype.h>
 #include <stdlib.h>
+#include "user.h"
 
-// --- Structure Definition ---
-struct User {
-    char name[20];
-    char password[20];
-    int role;   // 0: user, 1: admin
-    int state;  // 0: active, 1: blocked
-};
+
 
 // --- Function Prototypes ---
 

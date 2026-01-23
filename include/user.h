@@ -18,16 +18,17 @@ struct User {
  * 5.2. Functions and Procedures
  */
 
+
 // --- Initialization and Display ---
 void initUsers(struct User users[], int n);
-void displayUsers(struct User users[], int n);
+void listUsers(struct User users[], int n);
 void userStatistics(struct User users[], int n);
 void listAdmins(struct User users[], int n);
 
 // --- CRUD Operations (Create, Read, Update, Delete) ---
-void addUser(struct User users[], int n);
+void addUser(struct User *u);
 void deleteUser(struct User users[], int n, char name[]);
-int searchUser(struct User users[], int n, char name[]);
+int  searchUser(struct User users[], int n, char name[]);
 
 // --- Account Management ---
 void changePassword(struct User users[], int n, char name[]);
@@ -48,6 +49,6 @@ int containsSymbol(char str[]);
 
 // --- File Persistence ---
 void saveUsers(struct User users[], int n);
-void loadUsers(struct User users[], int n);
+int loadUsers(struct User users[], int n);
 
 #endif // USER_H

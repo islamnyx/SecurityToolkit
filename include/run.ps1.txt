@@ -1,0 +1,2 @@
+& gcc main.c audit.c encryption.c math_tools.c user.c logs.c -Iinclude -o security_suite.exe -lm
+if ($?) { ./security_suite.exe }

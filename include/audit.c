@@ -54,10 +54,20 @@ int textlength(char text[]) {
 }
 
 void displayTextStats(char text[]) {
-    printf("%d\n", countUppercase(text));
-    printf("%d\n", countLowercase(text));
-    printf("%d\n", countDigits(text));
-    printf("%.2f\n", percentUppercase(text));
+    int up = countUppercase(text);
+    int low = countLowercase(text);
+    int dig = countDigits(text);
+    int len = strlen(text);
+    
+    // Calculate percentage safely
+    float upPercent = (len > 0) ? ((float)up / len) * 100 : 0;
+
+    printf("\n--- Text Analysis ---");
+    printf("\nUppercase Letters: %d", up);
+    printf("\nLowercase Letters: %d", low);
+    printf("\nDigits:            %d", dig);
+    printf("\nUppercase Ratio:   %.2f%%", upPercent);
+    printf("\nTotal Length:      %d chars\n", len);
 }
 
 /* ================= PASSWORD ================= */
@@ -138,27 +148,39 @@ int passwordScore(char key[]) {
     return score;
 }
 
+void top3Passwords(struct User users[], int n) {
+    printf("\n[Audit] Analyzing top 3 weakest passwords...\n");
+    // Implementation logic here
+}
+
 /* ================= USERS ================= */
 
 float averageScore(struct User users[], int n) {
-    if (n <= 0) return 0.0f;
-
-    int totalScore = 0;
+    float total = 0;
+    int count = 0;
     for (int i = 0; i < n; i++) {
-        totalScore += passwordScore(users[i].password);
+        if (users[i].name[0] != '\0') { // Only count real users
+            total += passwordScore(users[i].password);
+            count++;
+        }
     }
-    return (float)totalScore / n;
+    return (count == 0) ? 0 : (total / count);
 }
 
 void displaySecurityReport(struct User users[], int n) {
-    printf("Average Password Security Score: %.2f\n",
-           averageScore(users, n));
+    float avg = averageScore(users, n);
+    printf("Average Password Security Score: %.2f\n", avg);
 
     int weakCount = 0;
     for (int i = 0; i < n; i++) {
-        if (passwordScore(users[i].password) < 3) {
-            weakCount++;
-            printf("Weak Password User: %s\n", users[i].name);
+        // --- ONLY PROCESS SLOTS THAT HAVE A NAME ---
+        // This stops the "garbage" data from appearing
+        if (users[i].name[0] != '\0') { 
+            
+            if (passwordScore(users[i].password) < 3) {
+                weakCount++;
+                printf("Weak Password User: %s\n", users[i].name);
+            }
         }
     }
     printf("Total Users with Weak Passwords: %d\n", weakCount);
@@ -171,6 +193,13 @@ int countStrongUsers(struct User users[], int n) {
             count++;
     }
     return count;
+}
+
+void showSecurityTips() {
+    printf("\n--- SECURITY TIPS ---\n");
+    printf("1. Use at least 12 characters.\n");
+    printf("2. Mix uppercase, lowercase, numbers, and symbols.\n");
+    printf("3. Change passwords every 90 days.\n");
 }
 
 /**

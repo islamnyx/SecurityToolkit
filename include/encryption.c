@@ -7,17 +7,16 @@
       int length;
 };
 
-void inputMessage(struct Message *m){
+// --- I/O and Basic Manipulation ---
 
-    printf("Enter your Message :");
-    fgets(m->text, 200, stdin);
-    m->text[strcspn(m->text, "\n")] = '\0';
-    m->length = strlen(m->text);  
-   
+void inputMessage(struct Message *m) {
+    printf("Enter your text: ");
+    scanf(" %[^\n]s", m->text);
+    m->length = strlen(m->text);
+    while(getchar() != '\n'); // Clear buffer
 }
 
-void displayMessage(struct Message *m){
-     
+void displayMessage(struct Message *m){  
   printf("Message : %s\n", m->text);
   printf("Length : %d\n", m->length);
 
@@ -247,19 +246,23 @@ void frequencyAnalysis(struct Message m){
 }
 
 
-int coincidenceIndex(struct Message m){
-  int i,index;
-  int sum = 0;
- int  repeat[26] = {0};
-  for(i = 0 ; i < m.length ; i++){
-    if(isAlphabetic(m.text[i])) {
-     index = toupper(m.text[i]) - 'A';
-    if(!repeat[index]) {
-    repeat[index] = 1;
-    sum += countCharacter(m.text ,m.text[i]) * (countCharacter(m.text ,m.text[i]) - 1);
-    }
-  }
-  }
-return (float)sum / (float)(m.length * (m.length - 1));
+float coincidenceIndex(struct Message m) { // Changed return to float
+    int i, index;
+    int sum = 0;
+    int repeat[26] = {0};
 
+    for(i = 0; i < m.length; i++) {
+        if(isAlphabetic(m.text[i])) {
+            index = toupper(m.text[i]) - 'A';
+            if(!repeat[index]) {
+                repeat[index] = 1;
+                // Corrected: pass 'm' (the struct), not 'm.text'
+                int count = countCharacter(m, m.text[i]); 
+                sum += count * (count - 1);
+            }
+        }
+    }
+    
+    if (m.length <= 1) return 0.0;
+    return (float)sum / (float)(m.length * (m.length - 1));
 }

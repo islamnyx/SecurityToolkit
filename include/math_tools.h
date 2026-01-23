@@ -29,7 +29,7 @@ int lcm(int a, int b);
 int modExp(int base, int exp, int mod);
 
 // --- Arithmetic & Number Properties ---
-int factorial(int n);
+double factorial(int n);
 int sumDigits(int n);
 int reverseNumber(int n);
 int isPalindromeNumber(int n);
