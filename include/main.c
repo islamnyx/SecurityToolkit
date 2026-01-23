@@ -1,3 +1,6 @@
+#ifdef _WIN32
+#include <windows.h>
+#endif
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
@@ -7,6 +10,274 @@
 #include "audit.h"
 #include "logs.h"
 #include <string.h>
+#include <unistd.h>
+
+// Function Prototypes
+void clearScreen();
+void cyberScanAnimation();
+void startupSequence();
+void shutdownSequence();
+void enableVirtualTerminal();
+
+void clearScreen() {
+    printf("\033[H\033[J"); // Clears screen
+}
+
+void cyberScanAnimation() {
+    char *lines[] = {
+        "Checking Firewall...",
+        "Scanning User Database...",
+        "Verifying Encryption Keys...",
+        "System Integrity: SECURE"
+    };
+
+    for(int i = 0; i < 4; i++) {
+        // \033[1;33m is Yellow
+        printf("\033[1;33m  [!] %-30s", lines[i]); 
+        fflush(stdout);
+        
+        for(int j = 0; j < 3; j++) {
+            usleep(200000); 
+            printf(".");
+            fflush(stdout);
+        }
+        // \033[1;32m is Green, \033[0m resets color
+        printf("\033[1;32m [OK]\033[0m\n"); 
+    }
+    usleep(500000);
+}
+
+void startupSequence() {
+    // Flash white
+    printf("\033[47m"); clearScreen(); fflush(stdout); usleep(50000);
+    // Back to black
+    printf("\033[0m"); clearScreen(); fflush(stdout);
+    clearScreen();
+    
+    // 1. Vertical Padding (Push it down the screen)
+    for(int i = 0; i < 5; i++) printf("\n");
+
+    // 2. Centered ASCII Art (Cyan Color)
+    printf("\033[1;36m");
+    printf("              _   _  ____   ____ ____  \n");
+    printf("             | \\ | |/ ___| / ___/ ___| \n");
+    printf("             |  \\| |\\___ \\| |   \\___ \\ \n");
+    printf("             | |\\  | ___) | |___ ___) |\n");
+    printf("             |_| \\_|____/ \\____|____/  \n");
+    
+    // 3. Subtitle
+    printf("\n             NATIONAL SECURITY CYBER SUITE\n");
+    printf("                [SYSTEM VERSION 2.0.1]\n\n");
+    
+    // 4. Centered Status Message
+    printf("             ESTABLISHING SECURE CONNECTION");
+    for(int i = 0; i < 5; i++) {
+        usleep(300000);
+        printf(".");
+        fflush(stdout);
+    }
+    
+    printf("\n\n                    \033[1;32m[ACCESS GRANTED]\033[0m\n");
+    usleep(1000000);
+    
+    // 5. Trigger your firewall scan
+    cyberScanAnimation();
+}
+
+void shutdownSequence() {
+    clearScreen();
+    
+    // Move down to the middle of the screen
+    for(int i = 0; i < 8; i++) printf("\n");
+
+    printf("\033[1;31m"); // Bright Red
+    printf("                [!] SYSTEM TERMINATING SESSION...\n\n");
+    
+    printf("                Cleaning Cache:  [");
+    for(int i = 0; i < 20; i++) {
+        usleep(150000); // Slower speed (0.15s)
+        printf("█"); // If this still breaks, use '#'
+        fflush(stdout);
+    }
+    printf("] DONE\n");
+
+    printf("                Wiping Memory:   [");
+    for(int i = 0; i < 20; i++) {
+        usleep(150000);
+        printf("█"); 
+        fflush(stdout);
+    }
+    printf("] DONE\n");
+
+    printf("\n\n                \033[1;37mLOGS SAVED. ENCRYPTION KEYS DESTROYED.\n");
+    printf("                     SYSTEM OFFLINE. GOODBYE.\033[0m\n");
+
+    // STAY ON SCREEN for 3 seconds so it's brilliant
+    usleep(3000000); 
+}
+
+
+
+void enableVirtualTerminal() {
+#ifdef _WIN32
+    // 1. Fix the colors
+    HANDLE hOut = GetStdHandle(STD_OUTPUT_HANDLE);
+    DWORD dwMode = 0;
+    GetConsoleMode(hOut, &dwMode);
+    dwMode |= ENABLE_VIRTUAL_TERMINAL_PROCESSING;
+    SetConsoleMode(hOut, dwMode);
+
+    // 2. Fix the symbols (UTF-8)
+    SetConsoleOutputCP(CP_UTF8); 
+#endif
+}
+
+void showLoadingBar(char* task) {
+    printf("\n  %s: ", task);
+    for (int i = 0; i < 20; i++) {
+        printf("\033[42m "); // Green background block
+        fflush(stdout);
+        usleep(50000); // 0.05 seconds delay
+    }
+    printf("\033[0m [COMPLETE]\n");
+}
+
+
+
+void setCyberTheme() {
+    printf("\033[1;32m"); // Bright Green (Matrix Style)
+}
+
+void resetColor() {
+    printf("\033[0m"); // Back to standard white
+}
+
+void drawHeader(char* title) {
+    clearScreen();
+    setCyberTheme();
+    printf("==========================================================\n");
+    printf("  NSCS CYBER-SECURITY TOOLKIT v2.0 - [SYSTEM: ONLINE]    \n");
+    printf("==========================================================\n");
+    printf("  CURRENT MODULE: %s\n", title);
+    printf("----------------------------------------------------------\n");
+    resetColor();
+}
+
+void mainMenuGUI() {
+    drawHeader("MAIN DASHBOARD");
+    printf("\033[1;36m"); // Cyan color for options
+    printf("  [1] > ENCRYPTION ENGINE\n");
+    printf("  [2] > MATHEMATICAL ANALYSIS\n");
+    printf("  [3] > USER & ACCESS CONTROL\n");
+    printf("  [4] > SECURITY AUDIT\n");
+    printf("  [5] > LOG MANAGEMENT\n");
+    printf("  [0] > SHUTDOWN SYSTEM\n");
+    printf("\033[0m");
+    printf("\n  Selection > ");
+}
+
+#include <conio.h> // Required for _getch()
+
+void getHiddenPassword(char password[], int maxLength) {
+    int i = 0;
+    char ch;
+
+    while (1) {
+        ch = _getch(); // Get key without printing
+
+        if (ch == 13) { // 13 is the ASCII code for 'Enter'
+            password[i] = '\0';
+            break;
+        } else if (ch == 8) { // 8 is 'Backspace'
+            if (i > 0) {
+                i--;
+                printf("\b \b"); // Erase the * from the screen
+            }
+        } else if (i < maxLength - 1) {
+            password[i++] = ch;
+            printf("*"); // Print star instead of the letter
+        }
+    }
+    printf("\n");
+}
+
+void saveSecureDatabase(struct User users[], int n, int key) {
+    FILE *fp = fopen("users.dat", "w");
+    FILE *fcp = fopen("config.ini", "w");
+    int checksum = 0;
+
+    for (int i = 0; i < n; i++) {
+        char tempBuffer[256];
+        // 1. Create the plain data string
+        sprintf(tempBuffer, "%s|%s|%d|%d|%d", 
+                users[i].name, users[i].password, 
+                users[i].role, users[i].state, users[i].failedAttempts);
+
+        // 2. Calculate Checksum BEFORE encryption
+        for(int j = 0; tempBuffer[j] != '\0'; j++) {
+            checksum += (int)tempBuffer[j];
+        }
+
+        // 3. Prepare struct Message for your library
+        struct Message m;
+        strncpy(m.text, tempBuffer, sizeof(m.text)); // Use .text instead of .content
+        
+        // 4. Call your library
+        encryptCeaser(&m, key);
+
+        // 5. Save the encrypted text to the file
+        fprintf(fp, "%s\n", m.text);
+    }
+
+    fprintf(fcp, "%d", checksum);
+    fclose(fp);
+    fclose(fcp);
+    printf("\033[1;32m[!] Database Sealed and Encrypted.\033[0m\n");
+}
+
+void loadSecureDatabase(struct User users[], int *n, int key) {
+    int expectedChecksum = 0;
+    FILE *fcp = fopen("config.ini", "r");
+    if (fcp) {
+        fscanf(fcp, "%d", &expectedChecksum);
+        fclose(fcp);
+    }
+
+    FILE *fp = fopen("users.dat", "r");
+    if (!fp) return;
+
+    char line[256];
+    int actualChecksum = 0;
+    *n = 0;
+
+    while (fgets(line, sizeof(line), fp)) {
+        line[strcspn(line, "\n")] = 0; // Clean newline
+
+        // 1. Load into your Message struct
+        struct Message m;
+        strncpy(m.text, line, sizeof(m.text));
+
+        // 2. Decrypt
+        decryptCeaser(&m, key);
+
+        // 3. Checksum the decrypted text
+        for(int j = 0; m.text[j] != '\0'; j++) {
+            actualChecksum += (int)m.text[j];
+        }
+
+        // 4. Parse back into User struct
+        sscanf(m.text, "%[^|]|%[^|]|%d|%d|%d", 
+               users[*n].name, users[*n].password, 
+               &users[*n].role, &users[*n].state, &users[*n].failedAttempts);
+        (*n)++;
+    }
+    fclose(fp);
+
+    if (actualChecksum != expectedChecksum) {
+        printf("\n\033[5;41m [!] TAMPERING DETECTED: INVALID CHECKSUM [!] \033[0m\n");
+        exit(1); 
+    }
+}
 
 void encryptionMenu() {
     struct Message myMsg;
@@ -43,9 +314,10 @@ void encryptionMenu() {
                 break;
 
             case 2:
-                displayMessage(&myMsg);
-                printf("Index of Coincidence: %d\n", coincidenceIndex(myMsg));
-                break;
+    displayMessage(&myMsg);
+    // Use %.4f to show 4 decimal places of the float result
+    printf("Index of Coincidence: %.4f\n", coincidenceIndex(myMsg));
+    break;
 
             case 3:
                 toUppercase(&myMsg);
@@ -70,13 +342,29 @@ void encryptionMenu() {
                 printf("Result: %s\n", myMsg.text);
                 break;
 
-            case 7:
-                printf("Enter XOR key string: ");
-                scanf("%s", keyStr);
-                while(getchar() != '\n');
-                encryptXOR(&myMsg, keyStr);
-                printf("Result: %s\n", myMsg.text);
-                break;
+case 7:
+    printf("Enter XOR key string: ");
+    scanf("%s", keyStr);
+    while(getchar() != '\n');
+
+    encryptXOR(&myMsg, keyStr);
+
+    printf("Result (Safe View): ");
+    for(int i = 0; i < myMsg.length; i++) {
+        // isprint() checks if the character can be safely displayed
+        if (isprint((unsigned char)myMsg.text[i])) {
+            printf("%c", myMsg.text[i]);
+        } else {
+            printf("."); // Show a dot for "messy" control characters
+        }
+    }
+    
+    printf("\nResult (Hex):      ");
+    for(int i = 0; i < myMsg.length; i++) {
+        printf("%02X ", (unsigned char)myMsg.text[i]);
+    }
+    printf("\n");
+    break;
 
             case 8:
                 printf("Enter 26-char substitution alphabet: ");
@@ -180,13 +468,11 @@ void mathMenu() {
     } while (subChoice != 0);
 }
 
-void userMenu() {
-    struct User database[100] = {0};
-    int userCount = 0;
+void userMenu(struct User database[], int *userCount, struct Log logDatabase[]) {
     int subChoice;
     char tempName[20], tempPass[20];
     
-    memset(database, 0, sizeof(database));
+    memset(database, 0, 100 * sizeof(struct User));
     loadUsers(database, 100);
 
     do {
@@ -205,17 +491,16 @@ void userMenu() {
 
         switch(subChoice) {
 case 1:
-    if (userCount < 100) {
-        // We pass the address of the specific slot we want to fill
-        addUser(&database[userCount]); 
+    if (*userCount < 100) {  // 1. Dereference to check the value
+        // 2. Dereference to use as an index
+        addUser(&database[*userCount], logDatabase); 
         
-        // Only increment the count if the user was actually added
-        if (database[userCount].name[0] != '\0') {
-            userCount++;
+        // 3. Dereference to check if user was added
+        if (database[*userCount].name[0] != '\0') {
+            (*userCount)++;  // 4. Dereference to increment the real count in main
         }
-        printf("Total users now: %d\n", userCount);
     } else {
-        printf("Database full!\n");
+        printf("Database is full!\n");
     }
     break;
             case 2:
@@ -226,44 +511,57 @@ case 1:
                 break;
             case 3:
                 printf("Enter username: "); scanf("%s", tempName);
-                changePassword(database, 100, tempName);
+              changePassword(database, 100, tempName, logDatabase);
                 break;
-            case 4:
-            printf("Enter username: "); 
-               scanf("%s", tempName);
+case 4:
+    printf("Enter username: "); 
+    scanf("%s", tempName);
+    printf("Enter new role (0:User, 1:Admin): ");
+    int newRole; 
+    scanf("%d", &newRole);
+
     
-              printf("Enter new role (0:User, 1:Admin): ");
-              int newRole; 
-              scanf("%d", &newRole); // Get the 4th argument here
-    
-               // Now pass all 4 arguments: array, size, name, and the new role
-                changeRole(database, 100, tempName, newRole); 
-                 break;
-            case 5:
-                printf("--- Login ---\nUsername: "); scanf("%s", tempName);
-                printf("Password: "); scanf("%s", tempPass);
-                if(checkLogin(database, 100, tempName, tempPass)) 
-                    printf("Login Successful!\n");
-                else 
-                    printf("Login Failed. Invalid credentials or blocked account.\n");
-                break;
+    changeRole(database, 100, tempName, newRole, logDatabase); 
+    break;
+            case 5: // Login
+    printf("--- Login ---\nUsername: "); 
+    scanf("%s", tempName);
+    printf("Password: "); 
+    getHiddenPassword(tempPass, 20);
+
+    if (checkLogin(database, 100, tempName, tempPass, logDatabase)) {
+        // SUCCESS PATH
+        printf("\n\033[1;32m[ACCESS GRANTED]\033[0m\n");
+        cyberScanAnimation(); // The cool animation you added
+        printf("Welcome, %s. Security session initialized.\n", tempName);
+    } 
+    else {
+        // ERROR PATH - The compiler needs this statement!
+        printf("\n\033[1;31m[ACCESS DENIED]\033[0m\n");
+        printf("Invalid credentials or account is blocked. Incident logged.\n");
+    }
+    break;
             case 6:
-                printf("Enter username: "); scanf("%s", tempName);
+                 printf("Enter username: "); scanf("%s", tempName);
                 if(searchUser(database, 100, tempName) != -1) {
                     printf("User found. Delete? (1:Yes/0:No): ");
                     int del; scanf("%d", &del);
-                    if(del) deleteUser(database, 100, tempName);
+                    // Pass the logDatabase here!
+                    if(del) deleteUser(database, 100, tempName, logDatabase); 
                 } else printf("User not found.\n");
                 break;
             case 7:
                 printf("Enter username: "); scanf("%s", tempName);
                 printf("Action (1:Block / 2:Unblock): ");
                 int act; scanf("%d", &act);
-                if(act == 1) blockUser(database, 100, tempName);
-                else unblockUser(database, 100, tempName);
+                // Pass the logDatabase here!
+                if(act == 1) blockUser(database, 100, tempName, logDatabase);
+                else unblockUser(database, 100, tempName, logDatabase);
                 break;
             case 8:
                 saveUsers(database, 100);
+                exportLogsCSV(logDatabase, 100); // Saves logs to an Excel-friendly file
+                printf("All data and logs saved to disk.\n");
                 break;
         }
     } while (subChoice != 0);
@@ -332,7 +630,7 @@ printf("\n1. Check Email\n2. Check Login Format\n3. Text Statistics\nChoice: ");
         displayTextStats(tempText); // Shows Uppercase, Lowercase, Digits counts
     }
     break;
-    
+
 
             case 5:
                 showSecurityTips();
@@ -342,60 +640,57 @@ printf("\n1. Check Email\n2. Check Login Format\n3. Text Statistics\nChoice: ");
 }
 
 
-void logsMenu() {
-    struct Log systemLogs[500]; // Static array for 500 log entries
-    int subChoice;
-    char tempBuffer[50];
-
-    // Initialize and load existing logs
-    initLogs(systemLogs, 500);
-    importLogsCSV(systemLogs, 500);
+void logMenu(struct Log logs[], int n) {
+    int choice, count;
+    char temp[30];
 
     do {
-        printf("\n--- LOG MANAGEMENT SYSTEM ---");
+        printf("\n--- SYSTEM LOG & AUDIT MANAGEMENT ---");
         printf("\n1. View All Logs");
         printf("\n2. Search Logs (by User or Date)");
-        printf("\n3. System Statistics & Error Rate");
+        printf("\n3. Security Statistics & Error Rate");
         printf("\n4. Detect Suspicious Activity");
-        printf("\n5. Export Logs to CSV");
-        printf("\n6. Clear Log History");
+        printf("\n5. Export Logs to CSV (Excel Compatible)");
+        printf("\n6. Archive & Clear Current Logs");
         printf("\n0. Back to Main Menu");
         printf("\nChoice: ");
-        scanf("%d", &subChoice);
-        getchar(); // Buffer clear
+        scanf("%d", &choice);
+        getchar(); // Clean buffer
 
-        switch(subChoice) {
+        switch(choice) {
             case 1:
-                displayLogs(systemLogs, 500);
+                displayLogs(logs, n);
                 break;
             case 2:
-                printf("Search by (1: User / 2: Date): ");
-                int searchType; scanf("%d", &searchType);
-                printf("Enter search term: "); scanf("%s", tempBuffer);
-                if(searchType == 1) searchLogsByUser(systemLogs, 500, tempBuffer);
-                else searchLogsByDate(systemLogs, 500, tempBuffer);
+                printf("1. Search by User\n2. Search by Date\nChoice: ");
+                int sType; scanf("%d", &sType);
+                printf("Enter search term: "); scanf("%s", temp);
+                if(sType == 1) searchLogsByUser(logs, n, temp);
+                else searchLogsByDate(logs, n, temp);
                 break;
             case 3:
-                displayLogStats(systemLogs, 500);
-                printf("Current Error Rate: %.2f%%\n", errorRate(systemLogs, 500));
+                displayLogStats(logs, n);
+                printf("System Error Rate: %.2f%%\n", errorRate(logs, n));
+                showTopErrors(logs, n);
                 break;
             case 4:
-                printf("Enter username to analyze: ");
-                scanf("%s", tempBuffer);
-                if(detectSuspiciousActivity(systemLogs, 500, tempBuffer))
-                    printf("ALERT: Suspicious activity patterns detected for %s!\n", tempBuffer);
+                printf("Enter username to check: "); scanf("%s", temp);
+                if(detectSuspiciousActivity(logs, n, temp))
+                    printf("ALERT: Suspicious activity (5+ failed logins) detected for %s!\n", temp);
                 else
-                    printf("Activity for %s appears normal.\n", tempBuffer);
+                    printf("Activity for %s appears normal.\n", temp);
                 break;
             case 5:
-                exportLogsCSV(systemLogs, 500);
+                exportLogsCSV(logs, n);
                 printf("Logs successfully exported to 'logs.csv'.\n");
                 break;
             case 6:
-                clearLogs(systemLogs, 500);
+                archiveLogs(logs, n);
+                clearLogs(logs, n);
+                printf("Logs archived to 'logs_archive.txt' and current memory cleared.\n");
                 break;
         }
-    } while (subChoice != 0);
+    } while (choice != 0);
 }
 
 void helpMenu() {
@@ -427,25 +722,31 @@ void aboutMenu() {
 }
 
 int main(){
+    enableVirtualTerminal();
+    startupSequence();
+    
+    struct User database[100] = {0};
+    struct Log logDatabase[100] = {0}; 
+    initLogs(logDatabase, 100);
+    int userCount = 0;
      int choice;
+
     do {
-      printf("\n==============================\n");
-      printf("   NSCS SECURITY UTILITY SUITE  \n");
-      printf("==============================\n");
-      printf("1. Encryption\n2. Math Tools\n3. User Management\n4. Security Audit\n5. Log Management\n6. Help\n7. About\n0. Exit\nChoice: ");
-      printf("Choice: ");
-      scanf("%d", &choice);
+        mainMenuGUI(); // This handles clearScreen, Header, and Menu
+        if (scanf("%d", &choice) != 1) break;
 
       
    switch(choice){
     case 1: encryptionMenu();break;
     case 2: mathMenu();      break;
-    case 3: userMenu();      break;
+    case 3: showLoadingBar("INITIALIZING USER DATABASE"); userMenu(database, &userCount, logDatabase); break;
     case 4: auditMenu();     break;
-    case 5: logsMenu();      break;
+    case 5: showLoadingBar("FETCHING SYSTEM LOGS");  logMenu(logDatabase, 100);     break;
     case 6: helpMenu();      break;   
     case 7: aboutMenu();     break;
-    default: printf("Invalid choice! Please try again. \n");
+    case 0: shutdownSequence(); break;
+    default: printf("\033[1;31mInvalid choice! Please try again.\033[0m\n");
+            usleep(1000000);
    }
 } while(choice != 0);
     return 0;

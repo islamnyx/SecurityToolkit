@@ -1,6 +1,9 @@
 #ifndef USER_H
 #define USER_H
 
+#include "logs.h" 
+
+
 #include <stdio.h>
 #include <string.h>
 
@@ -12,7 +15,10 @@ struct User {
     char password[20];
     int role;  // 0: user, 1: admin
     int state; // 0: active, 1: blocked
+    int failedAttempts;
 };
+
+#include "audit.h"
 
 /**
  * 5.2. Functions and Procedures
@@ -26,18 +32,18 @@ void userStatistics(struct User users[], int n);
 void listAdmins(struct User users[], int n);
 
 // --- CRUD Operations (Create, Read, Update, Delete) ---
-void addUser(struct User *u);
-void deleteUser(struct User users[], int n, char name[]);
+void addUser(struct User *u, struct Log logs[]);
+void deleteUser(struct User users[], int n, char name[], struct Log logs[]);
 int  searchUser(struct User users[], int n, char name[]);
 
 // --- Account Management ---
-void changePassword(struct User users[], int n, char name[]);
-void blockUser(struct User users[], int n, char name[]);
-void unblockUser(struct User users[], int n, char name[]);
-void changeRole(struct User users[], int n, char name[], int role);
+void changePassword(struct User users[], int n, char name[], struct Log logs[]);
+void blockUser(struct User users[], int n, char name[], struct Log logs[]);
+void unblockUser(struct User users[], int n, char name[], struct Log logs[]);
+void changeRole(struct User users[], int n, char name[], int newRole, struct Log logs[]);
 
 // --- Authentication and Validation ---
-int checkLogin(struct User users[], int n, char name[], char pass[]);
+int checkLogin(struct User users[], int n, char name[], char pass[], struct Log logs[]);
 int strongPassword(char pass[]);
 
 // --- String Utility Functions ---
@@ -47,8 +53,10 @@ int containsLowercase(char str[]);
 int containsDigit(char str[]);
 int containsSymbol(char str[]);
 
+void getHiddenPassword(char password[], int maxLength);
+
 // --- File Persistence ---
 void saveUsers(struct User users[], int n);
 int loadUsers(struct User users[], int n);
 
-#endif // USER_H
+#endif // USER_H;

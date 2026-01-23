@@ -133,19 +133,24 @@ int passwordScore(char key[]) {
     int length = strlen(key);
     int hasUpper = 0, hasLower = 0, hasDigit = 0, hasSymbol = 0;
 
-    if (length >= 8) score += 1;
-    if (length >= 12) score += 1;
-    if (length >= 16) score += 2;
+    // 1. Better Length Rewards
+    if (length >= 8) score += 2;
+    if (length >= 12) score += 2; 
 
     for (int i = 0; i < length; i++) {
         if (isupper(key[i])) hasUpper = 1;
         else if (islower(key[i])) hasLower = 1;
         else if (isdigit(key[i])) hasDigit = 1;
-        else hasSymbol = 1;
+        else if (!isspace(key[i])) hasSymbol = 1;
     }
 
-    score += hasUpper + hasLower + hasDigit + hasSymbol;
-    return score;
+    // 2. High reward for diversity (2 points each)
+    if (hasUpper) score += 2;
+    if (hasLower) score += 1; // Lowercase is common, 1 point
+    if (hasDigit) score += 2;
+    if (hasSymbol) score += 3; // Symbols are high security! +3 points
+
+    return score; 
 }
 
 void top3Passwords(struct User users[], int n) {

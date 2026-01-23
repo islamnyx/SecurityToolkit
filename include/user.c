@@ -1,7 +1,16 @@
 #include "user.h"
+#include "logs.h"  
+#include "audit.h"
 #include <stdio.h>
 #include <string.h>
 #include <ctype.h>
+
+#ifdef _WIN32
+  #include <windows.h>
+  #define usleep(x) Sleep((x)/1000) // Converts microseconds to milliseconds for Windows
+#else
+  #include <unistd.h> // For Linux/macOS
+#endif
 
 void initUsers(struct User users[], int n) {
     for (int i = 0; i < n; i++) {
@@ -26,40 +35,42 @@ void listUsers(struct User users[], int maxUsers) {
     }
 }
 
-void addUser(struct User *u) {
+void addUser(struct User *u, struct Log logs[]) {
+    printf("--- ADD NEW USER ---\n");
     printf("Enter name: ");
     scanf("%19s", u->name);
     
     char tempPass[20];
     printf("Enter password: ");
-    scanf("%19s", tempPass);
+    // FIX 1: Read the password into tempPass first, not u->password
+    getHiddenPassword(tempPass, 20); 
 
-    // Use your strong password check here
-    if (strongPassword(tempPass)) {
-        strcpy(u->password, tempPass);
-        u->role = 0;   // Default: user
-        u->state = 0;  // Default: active
-        printf("User added successfully.\n");
+    // FIX 2: Check the score of tempPass (The 8 threshold we discussed)
+    if (passwordScore(tempPass) >= 8) { 
+        strcpy(u->password, tempPass); // Only copy if it's strong enough
+        u->role = 0;   
+        u->state = 0;  
+        u->failedAttempts = 0; 
+        
+        addLog(logs, 100, u->name, "ACCOUNT_CREATED", 0);
+        printf("\nUser added successfully.\n"); // Added \n because getHiddenPassword might skip it
     } else {
-        printf("Error: Weak password! User not added.\n");
-        // Reset name so it stays "empty"
+        printf("\nError: Password too weak (Score: %d)! User not added.\n", passwordScore(tempPass));
         u->name[0] = '\0'; 
     }
 }
 
-void deleteUser(struct User users[], int n, char name[]) {
-    for (int i = 0; i < n; i++) {
-        if (strcmp(users[i].name, name) == 0) {
-            strcpy(users[i].name, "");
-            strcpy(users[i].password, "");
-            users[i].role = 0;
-            users[i].state = 0;
-            printf("User deleted successfully.\n");
-            return;
-        }
+void deleteUser(struct User users[], int n, char name[], struct Log logs[]) {
+    int idx = searchUser(users, n, name);
+    if (idx != -1) {
+        addLog(logs, 100, name, "ACCOUNT_DELETED", 1); // Record before deleting
+        users[idx].name[0] = '\0'; // Simple delete by clearing name
+        printf("User %s has been deleted.\n", name);
+    } else {
+        printf("User not found.\n");
     }
-    printf("User not found.\n");
 }
+
 
 int searchUser(struct User users[], int n, char name[]) {
     for (int i = 0; i < n; i++) {
@@ -70,26 +81,92 @@ int searchUser(struct User users[], int n, char name[]) {
     return -1; // Not found
 }
 
-void changePassword(struct User users[], int n, char name[]) {
-    int index = searchUser(users, n, name);
-    if (index != -1) {
-        printf("Enter new password: ");
-        scanf("%19s", users[index].password);
-        printf("Password changed successfully.\n");
-    } else {
-        printf("User not found.\n");
-    }
-}
-
-int checkLogin(struct User users[], int n, char name[], char pass[]) {
+void changePassword(struct User users[], int n, char name[], struct Log logs[]) {
+    int idx = -1;
+    // Find the user in the database
     for (int i = 0; i < n; i++) {
-        if (strcmp(users[i].name, name) == 0 &&
-            strcmp(users[i].password, pass) == 0 &&
-            users[i].state == 0) { // Check if active
-            return 1; // Login successful
+        if (strcmp(users[i].name, name) == 0) {
+            idx = i;
+            break;
         }
     }
-    return 0; // Login failed
+
+    if (idx == -1) {
+        printf("\033[1;31m[!] Error: User '%s' not found in system.\033[0m\n", name);
+        return;
+    }
+
+    char oldPass[20], newPass[20];
+    
+    // --- STEP 1: VERIFY CURRENT IDENTITY ---
+    printf("\033[1;33m[?] Verification required for %s.\033[0m\n", name);
+    printf("Enter current password: ");
+    getHiddenPassword(oldPass, 20); // HIDDEN INPUT
+
+    if (strcmp(users[idx].password, oldPass) == 0) {
+        // --- STEP 2: ENTER NEW SECURE PASSWORD ---
+        printf("\n\033[1;36m[+] Identity Verified.\033[0m\n");
+        printf("Enter new password: ");
+        getHiddenPassword(newPass, 20); // HIDDEN INPUT
+
+        // Security check for the new password
+        if (passwordScore(newPass) >= 6) { 
+            strcpy(users[idx].password, newPass);
+            printf("\n\033[1;32m[SUCCESS] Password updated in encrypted database.\033[0m\n");
+            
+            // SUCCESS LOG (Code 0 for Info)
+            addLog(logs, 100, name, "PASS_CHANGE_SUCCESS", 0);
+        } else {
+            printf("\n\033[1;31m[REJECTED] Password strength insufficient (Score < 6).\033[0m\n");
+            
+            // FAILURE LOG (Code 1 for Warning)
+            addLog(logs, 100, name, "PASS_CHANGE_WEAK", 1);
+        }
+    } else {
+        printf("\n\033[41m\033[1;37m [!] SECURITY ALERT: INCORRECT PASSWORD ENTERED \033[0m\n");
+        
+        // SECURITY ALERT LOG (Code 2 for Error/Risk)
+        addLog(logs, 100, name, "PASS_CHANGE_UNAUTH", 2);
+    }
+    
+    // Pause for a moment so the user can see the result before menu clears
+    usleep(1500000); 
+}
+
+int checkLogin(struct User users[], int n, char name[], char pass[], struct Log logs[]) {
+    int idx = searchUser(users, n, name);
+
+    if (idx != -1) {
+        // 1. Check if account is blocked (state == 1)
+        if (users[idx].state == 1) {
+            printf("\n\033[1;31m[!] ACCESS DENIED: This account is currently LOCKED.\033[0m\n");
+            addLog(logs, 100, name, "LOCKED_LOGIN_ATTEMPT", 2);
+            return 0;
+        }
+
+        // 2. Verify Password
+        if (strcmp(users[idx].password, pass) == 0) {
+            users[idx].failedAttempts = 0; // Reset counter on success
+            addLog(logs, 100, name, "LOGIN_SUCCESS", 0);
+            return 1;
+        } else {
+            // 3. Increment failures
+            users[idx].failedAttempts++;
+            printf("\n\033[1;33m[!] Warning: Incorrect password. Attempt %d/3.\033[0m\n", users[idx].failedAttempts);
+            
+            // 4. Trigger Auto-Lock
+            if (users[idx].failedAttempts >= 3) {
+                users[idx].state = 1; // Block the user
+                printf("\n\033[41m\033[1;37m [!!!] SECURITY ALERT: ACCOUNT AUTO-LOCKED [!!!] \033[0m\n");
+                addLog(logs, 100, name, "ACCOUNT_LOCKED_BRUTEFORCE", 2);
+            } else {
+                addLog(logs, 100, name, "LOGIN_FAILED", 1);
+            }
+        }
+    } else {
+        printf("\n\033[1;31m[!] User not found in database.\033[0m\n");
+    }
+    return 0;
 }
 
 int strongPassword(char pass[]) {
@@ -108,33 +185,39 @@ int strongPassword(char pass[]) {
     return (hasUpper && hasLower && hasDigit && hasSymbol);
 }
 
-void blockUser(struct User users[], int n, char name[]) {
-    int index = searchUser(users, n, name);
-    if (index != -1) {
-        users[index].state = 1; // Blocked
-        printf("User blocked successfully.\n");
-    } else {
-        printf("User not found.\n");
+void blockUser(struct User users[], int n, char name[], struct Log logs[]) {
+    int idx = searchUser(users, n, name);
+    if (idx != -1) {
+        users[idx].state = 1; // Blocked
+        addLog(logs, 100, name, "user blocked", 1); // 1 = Warning
     }
 }
 
-void unblockUser(struct User users[], int n, char name[]) {
-    int index = searchUser(users, n, name);
-    if (index != -1) {
-        users[index].state = 0; // Active
-        printf("User unblocked successfully.\n");
-    } else {
-        printf("User not found.\n");
+void unblockUser(struct User users[], int n, char name[], struct Log logs[]) {
+    int idx = searchUser(users, n, name);
+    if (idx != -1) {
+        users[idx].state = 0; 
+        addLog(logs, 100, name, "USER_UNBLOCKED", 0); // Now this will work
+        printf("User %s unblocked.\n", name);
     }
 }
 
-void changeRole(struct User users[], int n, char name[], int role) {
-    int index = searchUser(users, n, name);
-    if (index != -1) {
-        users[index].role = role;
-        printf("User role changed successfully.\n");
+void changeRole(struct User users[], int n, char name[], int newRole, struct Log logs[]) {
+    int idx = searchUser(users, n, name);
+    
+    if (idx != -1) {
+        users[idx].role = newRole;
+        
+        // Create a description string to show the change
+        char description[30];
+        sprintf(description, "ROLE_TO_%s", (newRole == 1) ? "ADMIN" : "USER");
+        
+        // RECORD THE LOG
+        addLog(logs, 100, name, description, 0);
+        
+        printf("Success: %s is now an %s.\n", name, (newRole == 1) ? "Admin" : "User");
     } else {
-        printf("User not found.\n");
+        printf("Error: User not found.\n");
     }
 }
 

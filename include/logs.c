@@ -15,34 +15,47 @@ void initLogs(struct Log logs[], int n) {
 
 void addLog(struct Log logs[], int n, char user[], char action[], int code) {
     for (int i = 0; i < n; i++) {
-        if (strcmp(logs[i].user, "") == 0) {
+        // Safe check for an empty slot
+        if (logs[i].user[0] == '\0') { 
             strncpy(logs[i].user, user, sizeof(logs[i].user) - 1);
             strncpy(logs[i].action, action, sizeof(logs[i].action) - 1);
 
-            // Get current date and time
             time_t now = time(NULL);
             struct tm *t = localtime(&now);
+            
+            // Format: 2026-01-21
             strftime(logs[i].date, sizeof(logs[i].date), "%Y-%m-%d", t);
+            // Format: 18:54
             strftime(logs[i].time, sizeof(logs[i].time), "%H:%M", t);
 
             logs[i].code = code;
-            break;
+            return; // Exit after adding the log
         }
     }
 }
 
 
 void displayLogs(struct Log logs[], int n) {
-    printf("User\tAction\tDate\tTime\tCode\n");
+    // Use formatted spacing instead of \t for a cleaner table
+    printf("\n%-15s %-20s %-12s %-8s %-5s\n", "User", "Action", "Date", "Time", "Code");
+    printf("----------------------------------------------------------------------\n");
+
+    int found = 0;
     for (int i = 0; i < n; i++) {
-        if (strcmp(logs[i].user, "") != 0) {
-            printf("%s\t%s\t%s\t%s\t%d\n",
+        // Checking the first character is safer than strcmp for empty strings
+        if (logs[i].user[0] != '\0') { 
+            printf("%-15s %-20s %-12s %-8s %-5d\n",
                    logs[i].user,
                    logs[i].action,
                    logs[i].date,
                    logs[i].time,
                    logs[i].code);
+            found = 1;
         }
+    }
+
+    if (!found) {
+        printf("No records found in the log database.\n");
     }
 }
 

@@ -16,10 +16,16 @@ void inputMessage(struct Message *m) {
     while(getchar() != '\n'); // Clear buffer
 }
 
-void displayMessage(struct Message *m){  
-  printf("Message : %s\n", m->text);
-  printf("Length : %d\n", m->length);
-
+void displayMessage(struct Message *m) {
+    printf("Current Message: [");
+    for(int i = 0; i < m->length; i++) {
+        if (isprint((unsigned char)m->text[i])) {
+            printf("%c", m->text[i]);
+        } else {
+            printf("."); // Keep the UI clean if the message is encrypted
+        }
+    }
+    printf("]\n");
 }
 
 int isUppercase(char c){
@@ -126,14 +132,18 @@ void reverseMessage(struct Message *m){
   }
 
 
-  void encryptXOR(struct Message *m , char key[]){
-      int i;
-      int keyLength = strlen(key);
-    for(i = 0 ; i < m->length ; i++){
-      m->text[i] = m->text[i] ^ key[i % keyLength];
-    }
+void encryptXOR(struct Message *m, char key[]) {
+    int keyLength = (int)strlen(key);
+    if (keyLength == 0) return;
 
-  }
+    // Use actual strlen if m->length is corrupted
+    int msgLen = (int)strlen(m->text); 
+    
+    for (int i = 0; i < msgLen; i++) {
+        m->text[i] = m->text[i] ^ key[i % keyLength];
+    }
+    m->length = msgLen; // Re-sync the struct length
+}
 
 
   void decryptXOR(struct Message *m , char key[]){
@@ -217,16 +227,15 @@ int compareMessages(struct Message m1, struct Message m2){
 }
 
 
-int countCharacter(struct Message m, char c){
-int i;
-int count=0;
-for(i = 0 ; i < m.length ; i++){
-  if(m.text[i]  == c) count++;
-}
-// addition in case non Casesesitive 
-//if(toupper(m.text[i]) == toupper(c)) count++;
-
-  return count;
+int countCharacter(struct Message m, char c) {
+    int count = 0;
+    for (int i = 0; i < m.length; i++) {
+        // Use toupper to make sure 'A' matches 'a'
+        if (toupper(m.text[i]) == toupper(c)) {
+            count++;
+        }
+    }
+    return count;
 }
 
 
@@ -246,23 +255,31 @@ void frequencyAnalysis(struct Message m){
 }
 
 
-float coincidenceIndex(struct Message m) { // Changed return to float
+float coincidenceIndex(struct Message m) { 
     int i, index;
     int sum = 0;
     int repeat[26] = {0};
 
+    // 1. Calculate the numerator: Sum of f * (f - 1)
     for(i = 0; i < m.length; i++) {
-        if(isAlphabetic(m.text[i])) {
+        if(isalpha(m.text[i])) { // Use standard isalpha
             index = toupper(m.text[i]) - 'A';
             if(!repeat[index]) {
                 repeat[index] = 1;
-                // Corrected: pass 'm' (the struct), not 'm.text'
+                // Count how many times this specific letter appears
                 int count = countCharacter(m, m.text[i]); 
                 sum += count * (count - 1);
             }
         }
     }
     
-    if (m.length <= 1) return 0.0;
-    return (float)sum / (float)(m.length * (m.length - 1));
+    // 2. Handle the denominator
+    // If length is 10, totalPairs is 10 * 9 = 90
+    int totalPairs = m.length * (m.length - 1);
+
+    if (totalPairs <= 0) return 0.0;
+
+    // 3. THE FIX: Cast to (float) so it doesn't return 0 or the denominator
+    // If sum is 2 and totalPairs is 90, result is 0.0222
+    return (float)sum / (float)totalPairs;
 }

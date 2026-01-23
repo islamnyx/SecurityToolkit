@@ -5,9 +5,8 @@
 #include <string.h>
 #include <ctype.h>
 #include <stdlib.h>
-#include "user.h"
 
-
+struct User;
 
 // --- Function Prototypes ---
 
